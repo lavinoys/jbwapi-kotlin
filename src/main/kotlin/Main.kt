@@ -1,3 +1,4 @@
+import bot.BarracksBot
 import bot.CommandCenterBot
 import bot.ScvBot
 import draw.DrawVisible
@@ -7,6 +8,7 @@ fun main() {
     CustomListener(
         DrawVisible(),
         CommandCenterBot(),
-        ScvBot()
+        ScvBot(),
+        BarracksBot()
     ).start()
 }
