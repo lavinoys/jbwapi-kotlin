@@ -16,7 +16,7 @@ class BarracksBot {
             && barracks.trainingQueue.size <= 0
             && barracks.canTrain(target)
             && self.minerals() >= 50
-            && game.allUnits.filter { it.type == UnitType.Terran_Barracks }.size < 4
+            && game.allUnits.filter { it.type == target }.size < 40
         ) {
             barracks.train(target)
         }

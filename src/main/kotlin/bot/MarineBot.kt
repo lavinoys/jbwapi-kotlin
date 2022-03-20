@@ -1,4 +1,0 @@
-package bot
-
-class MarineBot {
-}
