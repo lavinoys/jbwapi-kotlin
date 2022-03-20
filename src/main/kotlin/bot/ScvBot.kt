@@ -21,7 +21,7 @@ class ScvBot {
     ): Unit? = if (scv.type.isWorker
         && scv.canBuild(UnitType.Terran_Supply_Depot)
         && !scv.isCarryingMinerals
-        && self.supplyTotal()-self.supplyUsed() < 8
+        && self.supplyTotal()-self.supplyUsed() <= 8
     ) {
         scv
     } else {
