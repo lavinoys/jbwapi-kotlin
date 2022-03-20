@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.JavaBWAPI:JBWAPI:1.4")
+    implementation("com.github.JavaBWAPI:JBWAPI:1.5.1")
     testImplementation(kotlin("test"))
 }
 

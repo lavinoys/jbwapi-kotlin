@@ -4,13 +4,15 @@ import bwapi.Game
 import bwapi.Unit as Unit
 import bwapi.Player
 import bwapi.UnitType
+import bwem.BWEM
 
 class BarracksBot {
     fun train (
         barracks: Unit,
         target: UnitType,
         self: Player,
-        game: Game
+        game: Game,
+        bwem: BWEM
     ) {
         if ( barracks.type == UnitType.Terran_Barracks
             && barracks.trainingQueue.size <= 0

@@ -4,8 +4,11 @@ import bot.BarracksBot
 import bot.CommandCenterBot
 import bot.ScvBot
 import bwapi.*
+import bwem.BWEM
+import bwem.Base
 import bwapi.Unit as Unit
 import draw.DrawVisible
+import location.MyBaseLocation
 
 class CustomListener(
     private val drawVisible: DrawVisible,
@@ -17,6 +20,7 @@ class CustomListener(
     private lateinit var game: Game
     private var buildingScv: Unit? = null
     private var buildingBarracksScv: Unit? = null
+    private lateinit var bwem: BWEM
 
     fun start() {
         bwClient.startGame()
@@ -24,8 +28,15 @@ class CustomListener(
 
     override fun onStart() {
         game = bwClient.game
+        val self = game.self()
         game.setLocalSpeed(35)//게임 속도 30이 기본, 토너먼트에선 20
 //        game.setLatCom(true)
+        bwem = BWEM(game)
+        bwem.initialize()
+        bwem.map.run {
+            this.data
+            this.assignStartingLocationsToSuitableBases()
+        }
     }
 
     override fun onFrame() {
@@ -50,7 +61,7 @@ class CustomListener(
                     scvBot.build(it, UnitType.Terran_Barracks, game)
                 }?: run { buildingBarracksScv = scvBot.selectBuildBarracksScv(myUnit, self) }
 
-                barracks.train(myUnit, UnitType.Terran_Marine, self, game)
+                barracks.train(myUnit, UnitType.Terran_Marine, self, game, bwem)
         }
     }
 
@@ -62,6 +73,7 @@ class CustomListener(
             }
             if (it.type == UnitType.Terran_Barracks && it.isCompleted) {
                 buildingBarracksScv = null
+                it.setRallyPoint(bwem.map.chokePoints.first().center.toPosition())
             }
         }
 
