@@ -2,10 +2,8 @@ package bot
 
 import bwapi.Game
 import bwapi.Player
-import bwapi.TilePosition
 import bwapi.Unit as Unit
 import bwapi.UnitType
-import tile.CustomAnalyseTile
 
 class ScvBot {
     fun gatherMineral(scv: Unit, game: Game) {
@@ -23,31 +21,33 @@ class ScvBot {
     ): Unit? = if (scv.type.isWorker
         && scv.canBuild(UnitType.Terran_Supply_Depot)
         && !scv.isCarryingMinerals
-        && self.supplyTotal()-self.supplyUsed() < 6) {
+        && self.supplyTotal()-self.supplyUsed() < 8
+    ) {
         scv
     } else {
         null
     }
 
-    fun buildSupplyDepotCustom(
+    fun selectBuildBarracksScv(
         scv: Unit,
-        self: Player,
-        customAnalyseTile: CustomAnalyseTile,
-        game: Game
-    ): Boolean = customAnalyseTile.getBuildTile(
-        scv,
-        UnitType.Terran_Supply_Depot,
-        self.startLocation
-    )?.let {
-        return scv.build(UnitType.Terran_Supply_Depot, it)
-    }?: false
+        self: Player
+    ): Unit? = if (scv.type.isWorker
+        && !scv.isCarryingMinerals
+        && scv.canBuild(UnitType.Terran_Barracks)
+        && self.minerals() >= 150
+    ) {
+        scv
+    } else {
+        null
+    }
 
-    fun buildSupplyDepot(
+    fun build(
         scv: Unit,
+        target: UnitType,
         game: Game
     ): Boolean = scv.build(
-        UnitType.Terran_Supply_Depot,
-        game.getBuildLocation(UnitType.Terran_Supply_Depot, scv.tilePosition, 40, false)
+        target,
+        game.getBuildLocation(target, scv.tilePosition, 40, false)
     )
 
 }
