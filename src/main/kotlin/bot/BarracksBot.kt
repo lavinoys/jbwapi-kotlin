@@ -1,26 +1,21 @@
 package bot
 
-import bwapi.Game
 import bwapi.Unit as Unit
 import bwapi.Player
 import bwapi.UnitType
-import bwem.BWEM
 
 class BarracksBot {
-    fun train (
+    fun trainMarine (
         barracks: Unit,
-        target: UnitType,
-        self: Player,
-        game: Game,
-        bwem: BWEM
+        self: Player
     ) {
         if ( barracks.type == UnitType.Terran_Barracks
             && barracks.trainingQueue.size <= 0
-            && barracks.canTrain(target)
+            && barracks.canTrain(UnitType.Terran_Marine)
             && self.minerals() >= 50
-            && game.allUnits.filter { it.type == target }.size < 40
+            && self.supplyTotal()-self.supplyUsed() >= 6
         ) {
-            barracks.train(target)
+            barracks.train(UnitType.Terran_Marine)
         }
     }
 }

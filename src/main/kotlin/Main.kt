@@ -7,7 +7,6 @@ import listener.CustomListener
 
 fun main() {
     CustomListener(
-        DrawVisible(),
         CommandCenterBot(),
         ScvBot(),
         BarracksBot(),

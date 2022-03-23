@@ -14,6 +14,7 @@ repositories {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
     implementation("com.github.JavaBWAPI:JBWAPI:1.5.1")
     testImplementation(kotlin("test"))
 }

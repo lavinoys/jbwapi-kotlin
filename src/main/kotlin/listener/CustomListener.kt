@@ -7,10 +7,10 @@ import bot.ScvBot
 import bwapi.*
 import bwapi.Unit
 import bwem.BWEM
-import draw.DrawVisible
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 
 class CustomListener(
-    private val drawVisible: DrawVisible,
     private val commandCenter: CommandCenterBot,
     private val scvBot: ScvBot,
     private val barracks: BarracksBot,
@@ -24,6 +24,8 @@ class CustomListener(
     private lateinit var chokes: List<Position>
     private lateinit var startingLocations: List<Position>
     private var enemyLocation: Position? = null
+    private var firstScout: Boolean = true
+    private var scoutScv: Unit? = null
 
     fun start() {
         bwClient.startGame()
@@ -44,46 +46,76 @@ class CustomListener(
         startingLocations = bwem.map.startingLocations
             .filter { it.getDistance(self.startLocation) > 10 }
             .map { it.toPosition() }
-        if (startingLocations.size == 1) {
-            enemyLocation = startingLocations.first()
-        }
     }
 
     override fun onFrame() {
-        val self: Player = game.self()
-        val enemy: Player = game.enemy()
-        game.drawTextScreen(10, 10, "Playing as ${self.name} - ${self.race}")
-        game.drawTextScreen(10, 20, "supplyTotal : ${self.supplyTotal()}, supplyUsed : ${self.supplyUsed()}")
+        runBlocking {
+            val self: Player = game.self()
+            val enemy: Player = game.enemy()
+            game.drawTextScreen(10, 10, "Playing as ${self.name} - ${self.race}")
+            game.drawTextScreen(10, 20, "supplyTotal : ${self.supplyTotal()}, supplyUsed : ${self.supplyUsed()}")
 //        println("x : ${enemy.startLocation.x} , y : ${enemy.startLocation.y} / ${game.mapWidth()} , ${game.mapHeight()}")
 
-        if (enemyLocation == null
-            && enemy.startLocation.x - enemy.startLocation.y != -2
-        ) {
-            enemyLocation = enemy.startLocation.toPosition()
-        }
+            chokes.forEach { game.drawCircleMap(it, 10, Color.Red) }
+            startingLocations.forEach { game.drawCircleMap(it, 50, Color.Cyan) }
+            enemyLocation?.let { game.drawCircleMap(it, 40, Color.Red) }
 
-        chokes.forEach { game.drawCircleMap(it, 10, Color.Red) }
-        startingLocations.forEach { game.drawCircleMap(it, 50, Color.Cyan) }
+            /*
+            * 정찰한 곳에 적진이 있으면 저장
+            * */
+            if (enemyLocation == null) {
+                if (enemy.units.size > 1) {
+                    enemyLocation = startingLocations.minByOrNull { it.getApproxDistance(enemy.units.first().position) }
+                    scoutScv?.let { scvBot.gatherMineral(it, game) }
+                }
+            }
 
-        game.allUnits
-            .filter { it.isCompleted }
-            .filter { it.lastCommandFrame + game.latencyFrames < game.frameCount }
-            .parallelStream()
-            .forEach { myUnit ->
+            /*
+            * 일꾼 한 기 정찰 ㄱㄱ
+            * */
+            if (firstScout) {
+                val findScoutScvDeffer = async {
+                    scoutScv = self.units.first { it.type.isWorker && it.isIdle }
+                }
+                val doScoutScvDeffer = async {
+                    scoutScv?.let {
+                        scvBot.doScout(it, startingLocations)
+                    }
+                }
+                findScoutScvDeffer.await()
+                doScoutScvDeffer.await()
+                firstScout = false
+            }
+
+            self.units
+                .filter { it.isCompleted }
+                .filter { it.lastCommandFrame + game.latencyFrames < game.frameCount }
+                .forEach { myUnit ->
+                    runBlocking {
 //                drawVisible.worker(myUnit, game)
 //                drawVisible.supplyDepot(myUnit, game)
-                commandCenter.train(myUnit, self, game)
-                scvBot.gatherMineral(myUnit, game)
-                buildingScv?.let {
-                    scvBot.build(it, UnitType.Terran_Supply_Depot, game)
-                }?: run { buildingScv = scvBot.selectBuildSupplyDepotScv(myUnit, self) }
+                        commandCenter.train(myUnit, self, game)
+                        scvBot.gatherMineral(myUnit, game)
+                        buildingScv?.let {
+                            scvBot.build(it, UnitType.Terran_Supply_Depot, game)
+                        }?: run {
+                            if (myUnit.id != scoutScv?.id) {
+                                buildingScv = scvBot.selectBuildSupplyDepotScv(myUnit, self)
+                            }
+                        }
 
-                buildingBarracksScv?.let {
-                    scvBot.build(it, UnitType.Terran_Barracks, game)
-                }?: run { buildingBarracksScv = scvBot.selectBuildBarracksScv(myUnit, self) }
+                        buildingBarracksScv?.let {
+                            scvBot.build(it, UnitType.Terran_Barracks, game)
+                        }?: run {
+                            if (myUnit.id != scoutScv?.id) {
+                                buildingBarracksScv = scvBot.selectBuildBarracksScv(myUnit, self)
+                            }
+                        }
 
-                barracks.train(myUnit, UnitType.Terran_Marine, self, game, bwem)
-                marinBot.attack(myUnit, game, enemyLocation, startingLocations)
+                        barracks.trainMarine(myUnit, self)
+                        marinBot.attack(myUnit, self, enemyLocation)
+                    }
+                }
         }
     }
 

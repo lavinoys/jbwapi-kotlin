@@ -12,7 +12,7 @@ class CommandCenterBot {
             && commandCenter.trainingQueue.size <= 0
             && commandCenter.canTrain()
             && self.minerals() >= 50
-            && game.allUnits.filter { it.type.isWorker }.size < 20
+            && self.units.filter { it.type.isWorker }.size < 20
             && self.supplyTotal()-self.supplyUsed() >= 6
         ) {
             commandCenter.train(UnitType.Terran_SCV)

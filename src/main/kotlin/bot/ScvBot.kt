@@ -2,6 +2,7 @@ package bot
 
 import bwapi.Game
 import bwapi.Player
+import bwapi.Position
 import bwapi.Unit as Unit
 import bwapi.UnitType
 
@@ -49,5 +50,18 @@ class ScvBot {
         target,
         game.getBuildLocation(target, scv.tilePosition, 40, false)
     )
+
+    fun doScout(
+        scv: Unit,
+        startingLocations: List<Position>
+    ) {
+        startingLocations.forEachIndexed { index, position ->
+            if (index == 0) {
+                scv.move(position)
+            } else {
+                scv.move(position, true)
+            }
+        }
+    }
 
 }
